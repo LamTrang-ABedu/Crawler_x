@@ -30,7 +30,7 @@ def run_snscrape(username, limit=20):
     except subprocess.CalledProcessError as e:
         return {"error": str(e)}
 
-@app.route('/api/twitter-media', methods=['GET'])
+@app.route('/api/x-media', methods=['GET'])
 def get_media():
     username = request.args.get('username')
     if not username:
