@@ -1,34 +1,49 @@
-from fastapi import FastAPI, Query
-from utils.cookie_helper import load_twitter_cookies, get_username_from_cookies, call_api
-import uvicorn
+from flask import Flask, request, jsonify
+from utils.twitter_cookies import extract_cookies_from_txt, extract_username_from_cookies
+from x_follow import get_followers, get_following
 
-app = FastAPI()
+app = Flask(__name__)
 
-@app.get("/api/following")
-async def get_following(username: str = Query(None)):
-    cookies = load_twitter_cookies()
-    if not cookies:
-        return {"status": "error", "message": "Missing valid cookies"}
+COOKIE_URL = "https://r2.lam.io.vn/cookies/x_cookies.txt"
 
-    user = username or get_username_from_cookies(cookies)
-    if not user:
-        return {"status": "error", "message": "Could not determine username from cookies"}
+@app.route("/api/followers")
+def followers():
+    username = request.args.get("username")
+    try:
+        cookies = extract_cookies_from_txt(COOKIE_URL)
+        if not username:
+            username = extract_username_from_cookies(cookies)
+            if not username:
+                return jsonify({"status": "error", "message": "Could not determine username from cookies"})
+        data = get_followers(username, cookies)
+        return jsonify({"status": "ok", "data": data})
+    except Exception as e:
+        return jsonify({"status": "ok", "data": str(e)})
 
-    data = call_api(user, cookies, kind="following")
-    return {"status": "ok", "data": data}
+@app.route("/api/following")
+def following():
+    username = request.args.get("username")
+    try:
+        cookies = extract_cookies_from_txt(COOKIE_URL)
+        if not username:
+            username = extract_username_from_cookies(cookies)
+            if not username:
+                return jsonify({"status": "error", "message": "Could not determine username from cookies"})
+        data = get_following(username, cookies)
+        return jsonify({"status": "ok", "data": data})
+    except Exception as e:
+        return jsonify({"status": "ok", "data": str(e)})
 
-@app.get("/api/followers")
-async def get_followers(username: str = Query(None)):
-    cookies = load_twitter_cookies()
-    if not cookies:
-        return {"status": "error", "message": "Missing valid cookies"}
-
-    user = username or get_username_from_cookies(cookies)
-    if not user:
-        return {"status": "error", "message": "Could not determine username from cookies"}
-
-    data = call_api(user, cookies, kind="followers")
-    return {"status": "ok", "data": data}
+@app.route("/api/me")
+def me():
+    try:
+        cookies = extract_cookies_from_txt(COOKIE_URL)
+        username = extract_username_from_cookies(cookies)
+        if username:
+            return jsonify({"status": "ok", "username": username})
+        return jsonify({"status": "error", "message": "Could not extract username from cookies"})
+    except Exception as e:
+        return jsonify({"status": "error", "message": str(e)})
 
 if __name__ == "__main__":
-    uvicorn.run(app, host="0.0.0.0", port=10002)
+    app.run(host="0.0.0.0", port=10000)
