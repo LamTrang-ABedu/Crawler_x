@@ -36,6 +36,10 @@ def fetch_friends(user, mode='following'):
     else:
         return {"error": f"{res.status_code} - {res.text}"}
 
+@app.route('/')
+def index():
+    return 'X Follow Service is running.'
+
 @app.route('/api/following')
 def api_following():
     username = request.args.get("username")
