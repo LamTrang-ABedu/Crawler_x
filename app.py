@@ -9,7 +9,7 @@ def run_snscrape(username, limit=20):
         'snscrape',
         '--jsonl',
         f'--max-results={limit}',
-        f'twitter-user "{username}"'
+        f'twitter-user:{username}'  # ĐÃ SỬA: bỏ dấu ngoặc kép sai
     ]
     try:
         result = subprocess.run(cmd, capture_output=True, text=True, check=True)
