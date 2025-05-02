@@ -52,8 +52,7 @@ def fetch_friends(username, mode='following'):
 
     headers = {
         "User-Agent": "Mozilla/5.0",
-        "Accept": "application/json",
-        "Authorization": "Bearer AAAAAAAAAAAAAAAAAAAAANRILgAAAAAAt%2Ff4Gz..."
+        "Accept": "application/json"
     }
 
     cookies = parse_cookies_to_dict()
@@ -69,14 +68,22 @@ def fetch_friends(username, mode='following'):
 def home():
     return 'X Follow Service is running.'
 
+@app.route('/api/me')
+def api_me():
+    load_filtered_cookie_file()
+    cookies = parse_cookies_to_dict()
+    headers = {"User-Agent": "Mozilla/5.0"}
+    username = get_logged_in_username(headers, cookies)
+    if username:
+        return jsonify({"status": "ok", "username": username})
+    else:
+        return jsonify({"status": "error", "message": "Could not extract username from cookies"}), 400
+
 @app.route('/api/following')
 def api_following():
     load_filtered_cookie_file()
     username = request.args.get("username")
-    headers = {
-        "User-Agent": "Mozilla/5.0",
-        "Authorization": "Bearer AAAAAAAAAAAAAAAAAAAAANRILgAAAAAAt%2Ff4Gz..."
-    }
+    headers = {"User-Agent": "Mozilla/5.0"}
     cookies = parse_cookies_to_dict()
     if not username:
         username = get_logged_in_username(headers, cookies)
@@ -89,10 +96,7 @@ def api_following():
 def api_followers():
     load_filtered_cookie_file()
     username = request.args.get("username")
-    headers = {
-        "User-Agent": "Mozilla/5.0",
-        "Authorization": "Bearer AAAAAAAAAAAAAAAAAAAAANRILgAAAAAAt%2Ff4Gz..."
-    }
+    headers = {"User-Agent": "Mozilla/5.0"}
     cookies = parse_cookies_to_dict()
     if not username:
         username = get_logged_in_username(headers, cookies)
