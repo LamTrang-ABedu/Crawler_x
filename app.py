@@ -1,45 +1,43 @@
-
 from flask import Flask, request, jsonify
 import subprocess
 import json
 
 app = Flask(__name__)
 
-def scrape_user_list(username: str, mode: str):
-    if mode not in ['followers', 'following']:
-        return []
-
+def run_snscrape(username, limit=20):
+    cmd = [
+        'snscrape',
+        '--jsonl',
+        f'--max-results={limit}',
+        f'twitter-user "{username}"'
+    ]
     try:
-        result = subprocess.run(
-            ["snscrape", f"--jsonl", f"--{mode}", username],
-            capture_output=True,
-            text=True,
-            check=True
-        )
-        users = []
-        for line in result.stdout.strip().split("\n"):
-            data = json.loads(line)
-            users.append(data.get("username"))
-        return users
+        result = subprocess.run(cmd, capture_output=True, text=True, check=True)
+        lines = result.stdout.strip().split('\n')
+        media_posts = []
+
+        for line in lines:
+            tweet = json.loads(line)
+            medias = tweet.get("media", [])
+            if medias:
+                media_posts.append({
+                    "url": f"https://twitter.com/{tweet['user']['username']}/status/{tweet['id']}",
+                    "content": tweet.get("content", ""),
+                    "date": tweet.get("date", ""),
+                    "media": medias
+                })
+        return media_posts
     except subprocess.CalledProcessError as e:
-        return {"error": f"Scrape failed: {e.stderr}"}
+        return {"error": str(e)}
 
-@app.route("/api/followers")
-def get_followers():
-    username = request.args.get("username")
+@app.route('/api/twitter-media', methods=['GET'])
+def get_media():
+    username = request.args.get('username')
     if not username:
         return jsonify({"status": "error", "message": "Missing ?username="})
-    data = scrape_user_list(username, "followers")
+    
+    data = run_snscrape(username)
     return jsonify({"status": "ok", "data": data})
 
-@app.route("/api/following")
-def get_following():
-    username = request.args.get("username")
-    if not username:
-        return jsonify({"status": "error", "message": "Missing ?username="})
-    data = scrape_user_list(username, "following")
-    return jsonify({"status": "ok", "data": data})
-
-@app.route("/")
-def index():
-    return "Twitter/X Follow Service (via snscrape)"
+if __name__ == "__main__":
+    app.run(host="0.0.0.0", port=10000)
