@@ -77,8 +77,8 @@ def scroll_and_collect(driver, max_scroll=30, delay=2):
 
 def upload_to_r2(file_path, key_path):
     load_dotenv()
-    access_key = os.getenv("R2_ACCESS_KEY_ID")
-    secret_key = os.getenv("R2_SECRET_ACCESS_KEY")
+    access_key = os.getenv("R2_ACCESS_KEY")
+    secret_key = os.getenv("R2_SECRET_KEY")
     endpoint = os.getenv("R2_ENDPOINT")
     bucket = os.getenv("R2_BUCKET")
 

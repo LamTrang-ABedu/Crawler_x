@@ -1,2 +1,4 @@
-flask
-snscrape
+selenium
+requests
+boto3
+python-dotenv
