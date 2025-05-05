@@ -3,4 +3,3 @@ requests
 boto3
 python-dotenv
 flask
-threading
