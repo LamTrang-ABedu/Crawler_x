@@ -6,6 +6,11 @@ from urllib.parse import urlparse
 import boto3
 from dotenv import load_dotenv
 load_dotenv()
+from flask import Flask, request, jsonify
+import threading
+import os
+
+app = Flask(__name__)
 
 COOKIES_URL = "https://r2.lam.io.vn/cookies/x_cookies.txt"
 OUTPUT_FILE = "x_media.json"
@@ -170,8 +175,31 @@ def crawl_x_media(username):
 
     upload_to_r2(media)
 
-if __name__ == "__main__":
-    if len(sys.argv) < 2:
-        print("Usage: python app.py <twitter_username>")
-        sys.exit(1)
-    crawl_x_media(sys.argv[1])
+@app.route('/crawl', methods=['POST'])
+def crawl():
+    data = request.get_json()
+    username = data.get('username')
+    callback_url = data.get('callback')  # optional
+
+    if not username:
+        return jsonify({'status': 'error', 'message': 'Missing username'}), 400
+
+    def crawl_thread():
+        try:
+            crawl_x_media(username)
+            print(f"[DONE] Crawl complete for {username}")
+            if callback_url:
+                try:
+                    import requests
+                    requests.post(callback_url, json={"status": "done", "username": username})
+                except Exception as e:
+                    print(f"[Callback error] {e}")
+        except Exception as e:
+            print(f"[ERROR] {e}")
+
+    threading.Thread(target=crawl_thread).start()
+    return jsonify({'status': 'started', 'username': username})
+
+if __name__ == '__main__':
+    port = int(os.environ.get("PORT", 5000))
+    app.run(host='0.0.0.0', port=port)
